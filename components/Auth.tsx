@@ -1,20 +1,51 @@
 
 import React, { useState } from 'react';
-import { Lock, Mail, User, ArrowRight, Wallet } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, Wallet, Loader2 } from 'lucide-react';
+import { authService } from '../services/auth';
+import { User as UserType } from '../types';
 
 interface AuthProps {
-  onLogin: () => void;
+  onLogin: (user: UserType) => void;
 }
 
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate auth
-    onLogin();
+    setLoading(true);
+    setError(null);
+    
+    if (isLogin) {
+      // Sign in
+      const { user, error } = await authService.signIn(email, password);
+      if (error) {
+        setError(error);
+        setLoading(false);
+        return;
+      }
+      if (user) {
+        onLogin(user);
+      }
+    } else {
+      // Sign up
+      const { user, error } = await authService.signUp(email, password, name);
+      if (error) {
+        setError(error);
+        setLoading(false);
+        return;
+      }
+      if (user) {
+        onLogin(user);
+      }
+    }
+    
+    setLoading(false);
   };
 
   return (
@@ -27,6 +58,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">MoneyBag</h1>
           <p className="text-slate-500 mt-2 font-medium">Simplify your financial future.</p>
         </div>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm">
+            {error}
+          </div>
+        )}
 
         <div className="bg-slate-50 p-1 rounded-2xl flex">
           <button
@@ -53,7 +90,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input
                 type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Full Name"
+                required
                 className="w-full bg-slate-50 border-0 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500 transition-all"
               />
             </div>
@@ -89,10 +129,20 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+            disabled={loading}
+            className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:opacity-70"
           >
-            <span>{isLogin ? 'Welcome Back' : 'Create Account'}</span>
-            <ArrowRight size={18} />
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
+              </>
+            ) : (
+              <>
+                <span>{isLogin ? 'Welcome Back' : 'Create Account'}</span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         </form>
 

@@ -63,8 +63,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">MoneyBag</h1>
-          <p className="text-slate-500 text-sm font-medium">Your portfolio overview</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+          <p className="text-slate-500 text-sm font-medium">Your financial overview</p>
         </div>
         <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
            <Wallet className="text-indigo-600" size={24} />

@@ -94,3 +94,12 @@
 - Repository URL: https://github.com/gitau15/moneybag.git
 - The project is ready to be pushed to the remote repository
 - All components and functionality are documented in this progress log
+
+## Supabase Integration
+- Added Supabase authentication for user registration and login
+- Created authentication service with sign up, sign in, and sign out functionality
+- Updated Auth component with actual Supabase authentication
+- Added transaction service for database operations
+- Updated App component to use Supabase for data persistence
+- Created database schema for transactions
+- Updated README with Supabase setup instructions

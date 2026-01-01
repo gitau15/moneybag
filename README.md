@@ -1,20 +1,69 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# MoneyBag
 
-# Run and deploy your AI Studio app
+A financial management application built with React and TypeScript, featuring Supabase authentication and database integration.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1J-3kTGG2DrF4kovKmCf2VrK9gkNfbm6H
+- Dashboard with transaction overview
+- Calendar view for date-based transactions
+- Transaction management (add, view, categorize)
+- Goal tracking
+- User authentication and registration with Supabase
+- Responsive design
 
-## Run Locally
+## Prerequisites
 
-**Prerequisites:**  Node.js
+- Node.js
+- Supabase account
 
+## Setup
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+   ```bash
+   npm install
+   ```
+
+2. Create a `.env.local` file in the root directory and add your Supabase environment variables:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
 3. Run the app:
-   `npm run dev`
+   ```bash
+   npm run dev
+   ```
+
+## Supabase Configuration
+
+1. Create a new Supabase project at [supabase.com](https://supabase.com)
+2. Get your Project URL and Public API Key (anon key) from Project Settings > API
+3. Add the environment variables to your `.env.local` file
+4. Create the following tables in your Supabase database:
+
+   Transactions table:
+   ```sql
+   CREATE TABLE transactions (
+     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+     user_id UUID REFERENCES auth.users NOT NULL,
+     date TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+     type TEXT NOT NULL CHECK (type IN ('Income', 'Expense')),
+     category TEXT NOT NULL,
+     amount DECIMAL(10, 2) NOT NULL,
+     note TEXT,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+   ```
+
+## Environment Variables
+
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase public API key
+
+## Running with Vercel
+
+This app is ready to deploy to Vercel. When deploying, add the same environment variables in the Vercel dashboard.
+
+## Development
+
+The app follows an incremental development approach, with features built one route at a time to ensure each is functional before proceeding to the next.
