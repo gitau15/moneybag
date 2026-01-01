@@ -54,8 +54,8 @@ const App: React.FC = () => {
       const { transactions, error } = await transactionService.getTransactions(user.email || user.name);
       if (error) {
         console.error('Error loading transactions:', error);
-        // Fallback to initial transactions
-        setTransactions(INITIAL_TRANSACTIONS);
+        // Set to empty array instead of initial transactions to avoid incorrect balance
+        setTransactions([]);
       } else {
         setTransactions(transactions);
       }

@@ -94,6 +94,7 @@
 - Fixed duplicate TransactionForm component in App.tsx (lines 115-127)
 - Improved error handling in transactions service with better error messages and Axios error type checking
 - Added console logging for debugging purposes in service error handlers
+- Fixed balance calculation issue by changing fallback from INITIAL_TRANSACTIONS to empty array when loading user transactions fails
 
 ## GitHub Repository
 - Repository URL: https://github.com/gitau15/moneybag.git
