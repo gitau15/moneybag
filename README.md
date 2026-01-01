@@ -39,7 +39,12 @@ A financial management application built with React and TypeScript, featuring Su
 1. Create a new Supabase project at [supabase.com](https://supabase.com)
 2. Get your Project URL and Public API Key (anon key) from Project Settings > API
 3. Add the environment variables to your `.env.local` file
-4. Create the following tables in your Supabase database:
+4. Configure email authentication settings:
+   - Go to Authentication > Settings in your Supabase dashboard
+   - Enable "Email" provider
+   - Configure the email templates for password reset
+   - Set the confirmation and recovery URLs as needed
+5. Create the following tables in your Supabase database:
 
    Transactions table:
    ```sql
@@ -52,6 +57,21 @@ A financial management application built with React and TypeScript, featuring Su
      amount DECIMAL(10, 2) NOT NULL,
      note TEXT,
      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+
+   Goals table:
+   ```sql
+   CREATE TABLE goals (
+     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+     user_id UUID REFERENCES auth.users NOT NULL,
+     trip_target DECIMAL(10, 2) DEFAULT 0,
+     trip_current DECIMAL(10, 2) DEFAULT 0,
+     debt_target DECIMAL(10, 2) DEFAULT 0,
+     debt_current DECIMAL(10, 2) DEFAULT 0,
+     retirement_target DECIMAL(10, 2) DEFAULT 0,
+     retirement_current DECIMAL(10, 2) DEFAULT 0,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
    );
    ```
 

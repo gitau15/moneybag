@@ -49,7 +49,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
 ];
 
 export const GOAL_LIMITS = {
-  TRIP: 5000,
-  DEBT: 10000,
-  RETIREMENT: 1000000,
+  TRIP: 0,
+  DEBT: 0,
+  RETIREMENT: 0,
 };

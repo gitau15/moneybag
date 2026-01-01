@@ -16,36 +16,70 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [showForgotPasswordForm, setShowForgotPasswordForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     
-    if (isLogin) {
-      // Sign in
-      const { user, error } = await authService.signIn(email, password);
+    if (showForgotPasswordForm) {
+      // Handle password reset request
+      const { error } = await authService.sendPasswordResetEmail(resetEmail);
       if (error) {
         setError(error);
-        setLoading(false);
-        return;
-      }
-      if (user) {
-        onLogin(user);
+      } else {
+        setResetSuccess(true);
+        // Reset the form after successful request
+        setTimeout(() => {
+          setShowForgotPasswordForm(false);
+          setResetSuccess(false);
+          setResetEmail('');
+        }, 3000);
       }
     } else {
-      // Sign up
-      const { user, error } = await authService.signUp(email, password, name);
-      if (error) {
-        setError(error);
-        setLoading(false);
-        return;
-      }
-      if (user) {
-        onLogin(user);
+      if (isLogin) {
+        // Sign in
+        const { user, error } = await authService.signIn(email, password);
+        if (error) {
+          setError(error);
+          setLoading(false);
+          return;
+        }
+        if (user) {
+          onLogin(user);
+        }
+      } else {
+        // Sign up
+        const { user, error } = await authService.signUp(email, password, name);
+        if (error) {
+          setError(error);
+          setLoading(false);
+          return;
+        }
+        if (user) {
+          onLogin(user);
+        }
       }
     }
     
     setLoading(false);
+  };
+  
+  const handleForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowForgotPasswordForm(true);
+    setResetSuccess(false);
+    setError(null);
+  };
+  
+  const handleBackToLogin = () => {
+    setShowForgotPasswordForm(false);
+    setResetEmail('');
+    setResetSuccess(false);
+    setError(null);
   };
 
   return (
@@ -123,7 +157,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
           {isLogin && (
             <div className="text-right">
-              <button type="button" className="text-xs font-bold text-indigo-600 hover:underline">Forgot Password?</button>
+              <button 
+                type="button" 
+                onClick={handleForgotPassword}
+                className="text-xs font-bold text-indigo-600 hover:underline"
+              >
+                Forgot Password?
+              </button>
             </div>
           )}
 
@@ -135,22 +175,66 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             {loading ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
-                <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
+                <span>
+                  {showForgotPasswordForm ? 'Sending Reset Email...' : 
+                   isLogin ? 'Signing In...' : 'Creating Account...'}
+                </span>
               </>
             ) : (
               <>
-                <span>{isLogin ? 'Welcome Back' : 'Create Account'}</span>
+                <span>
+                  {showForgotPasswordForm ? 'Send Reset Email' : 
+                   isLogin ? 'Welcome Back' : 'Create Account'}
+                </span>
                 <ArrowRight size={18} />
               </>
             )}
           </button>
         </form>
 
-        <div className="text-center pt-8">
-          <p className="text-xs text-slate-400 font-medium">
-            By continuing, you agree to our <span className="text-slate-900 underline">Terms of Service</span> and <span className="text-slate-900 underline">Privacy Policy</span>.
-          </p>
-        </div>
+        {showForgotPasswordForm ? (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">Reset Password</h3>
+              <button 
+                type="button" 
+                onClick={handleBackToLogin}
+                className="text-indigo-600 hover:underline text-sm font-medium"
+              >
+                Back to Login
+              </button>
+            </div>
+            
+            {resetSuccess ? (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl text-sm">
+                Password reset link sent! Check your email to reset your password.
+              </div>
+            ) : (
+              <>
+                <p className="text-slate-600 text-sm mb-4">
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+                <div className="relative mb-4">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="Email Address"
+                    required
+                    className="w-full bg-slate-50 border-0 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500 transition-all"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="text-center pt-8">
+            <p className="text-xs text-slate-400 font-medium">
+              By continuing, you agree to our <span className="text-slate-900 underline">Terms of Service</span> and <span className="text-slate-900 underline">Privacy Policy</span>.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import { TransactionForm } from './components/TransactionForm';
 import { AppTab, Transaction, User } from './types';
 import { INITIAL_TRANSACTIONS } from './constants';
 import { authService } from './services/auth';
-import { transactionService } from './services/transactions';
+import { transactionService, goalsService, Goal } from './services/transactions';
 import { supabase } from './supabase/client';
 
 const App: React.FC = () => {
@@ -26,7 +26,7 @@ const App: React.FC = () => {
       if (user) {
         setIsAuthenticated(true);
         setCurrentUser(user);
-        // Load user's transactions from Supabase
+        // Load user's transactions and goals from Supabase
         loadTransactions(user);
       }
     };
@@ -50,6 +50,7 @@ const App: React.FC = () => {
   // Load transactions when user authenticates
   const loadTransactions = async (user: User) => {
     if (user) {
+      // Load transactions
       const { transactions, error } = await transactionService.getTransactions(user.email || user.name);
       if (error) {
         console.error('Error loading transactions:', error);
@@ -57,6 +58,14 @@ const App: React.FC = () => {
         setTransactions(INITIAL_TRANSACTIONS);
       } else {
         setTransactions(transactions);
+      }
+      
+      // Load goals
+      const { goals, error: goalsError } = await goalsService.getGoals(user.email || user.name);
+      if (goalsError) {
+        console.error('Error loading goals:', goalsError);
+      } else if (goals) {
+        // setGoals(goals); // We'll pass this to Dashboard as needed
       }
     }
   };
@@ -98,9 +107,9 @@ const App: React.FC = () => {
         setActiveTab={setActiveTab}
         onAddClick={() => setIsFormOpen(true)}
       >
-        {activeTab === 'Dashboard' && <Dashboard transactions={transactions} />}
+        {activeTab === 'Dashboard' && <Dashboard transactions={transactions} userId={currentUser?.email || currentUser?.name} />}
         {activeTab === 'Calendar' && <CalendarView transactions={transactions} />}
-        {activeTab === 'Profile' && <Profile onLogout={handleLogout} />}
+        {activeTab === 'Profile' && <Profile user={currentUser!} onLogout={handleLogout} />}
       </Layout>
 
       {isFormOpen && (

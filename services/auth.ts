@@ -64,7 +64,7 @@ export const authService = {
 
   async getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
-    
+      
     if (user) {
       return {
         name: user.user_metadata.name || user.email?.split('@')[0] || '',
@@ -72,7 +72,23 @@ export const authService = {
         avatar: user.user_metadata.avatar || ''
       };
     }
-    
+      
     return null;
+  },
+  
+  async sendPasswordResetEmail(email: string): Promise<{ error: string | null }> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+  
+      if (error) {
+        return { error: error.message };
+      }
+  
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message };
+    }
   }
 };

@@ -1,8 +1,9 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Transaction, TransactionType } from '../types';
 import { formatCurrency } from '../utils';
 import { GOAL_LIMITS } from '../constants';
+import { goalsService } from '../services/transactions';
 import { 
   BarChart, 
   Bar, 
@@ -13,13 +14,46 @@ import {
   ResponsiveContainer, 
   Cell 
 } from 'recharts';
-import { TrendingUp, TrendingDown, Target, Wallet } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Wallet, DollarSign } from 'lucide-react';
 
 interface DashboardProps {
   transactions: Transaction[];
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
+interface DashboardProps {
+  transactions: Transaction[];
+  userId?: string; // Add userId for Supabase operations
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ transactions, userId }) => {
+  const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+  
+  const handleGoalChange = async (goalType: string, value: number) => {
+    setGoals(prev => ({
+      ...prev,
+      [goalType]: {
+        ...prev[goalType as keyof typeof prev],
+        target: value
+      }
+    }));
+    
+    // If user is logged in, save goals to Supabase
+    if (userId) {
+      try {
+        const updatedGoals = {
+          ...goals,
+          [goalType]: {
+            ...goals[goalType as keyof typeof goals],
+            target: value
+          }
+        };
+        
+        await goalsService.updateGoals(updatedGoals, userId);
+      } catch (error) {
+        console.error('Error saving goals:', error);
+      }
+    }
+  };
   const totals = useMemo(() => {
     return transactions.reduce(
       (acc, t) => {
@@ -33,19 +67,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
   const balance = totals.income - totals.expense;
 
-  const goalData = useMemo(() => {
-    const goals = {
-      trip: transactions.filter(t => t.category === 'International Trip').reduce((s, t) => s + t.amount, 0),
-      debt: transactions.filter(t => t.category === 'Debt Payment').reduce((s, t) => s + t.amount, 0),
-      retirement: transactions.filter(t => t.category === 'Retirement').reduce((s, t) => s + t.amount, 0),
-    };
+  const [goals, setGoals] = useState({
+    trip: { current: 0, target: 0 },
+    debt: { current: 0, target: 0 },
+    retirement: { current: 0, target: 0 },
+  });
 
-    return [
-      { name: 'Trip', current: goals.trip, target: GOAL_LIMITS.TRIP, color: '#6366f1' },
-      { name: 'Debt', current: goals.debt, target: GOAL_LIMITS.DEBT, color: '#f43f5e' },
-      { name: 'Retirement', current: goals.retirement, target: GOAL_LIMITS.RETIREMENT, color: '#10b981' },
-    ];
+  useEffect(() => {
+    // Calculate current amounts from transactions
+    const tripCurrent = transactions.filter(t => t.category === 'International Trip').reduce((s, t) => s + t.amount, 0);
+    const debtCurrent = transactions.filter(t => t.category === 'Debt Payment').reduce((s, t) => s + t.amount, 0);
+    const retirementCurrent = transactions.filter(t => t.category === 'Retirement').reduce((s, t) => s + t.amount, 0);
+    
+    setGoals(prev => ({
+      trip: { ...prev.trip, current: tripCurrent },
+      debt: { ...prev.debt, current: debtCurrent },
+      retirement: { ...prev.retirement, current: retirementCurrent },
+    }));
   }, [transactions]);
+
+  const goalData = [
+    { name: 'Trip', current: goals.trip.current, target: goals.trip.target, color: '#6366f1' },
+    { name: 'Debt', current: goals.debt.current, target: goals.debt.target, color: '#f43f5e' },
+    { name: 'Retirement', current: goals.retirement.current, target: goals.retirement.target, color: '#10b981' },
+  ];
 
   const chartData = useMemo(() => {
     const grouped = transactions.reduce((acc: any, t) => {
@@ -102,13 +147,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
       {/* Goal Progress */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-        <div className="flex items-center space-x-2 mb-6">
-          <Target className="text-indigo-600" size={20} />
-          <h3 className="font-bold text-slate-800">Financial Goals</h3>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <Target className="text-indigo-600" size={20} />
+            <h3 className="font-bold text-slate-800">Financial Goals</h3>
+          </div>
+          <button 
+            onClick={() => setIsGoalFormOpen(!isGoalFormOpen)}
+            className="text-xs font-bold text-indigo-600 hover:underline"
+          >
+            {isGoalFormOpen ? 'Hide' : 'Edit'} Goals
+          </button>
         </div>
+        
+        {isGoalFormOpen && (
+          <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <h4 className="font-semibold text-slate-700 mb-3">Set Your Goals</h4>
+            <div className="space-y-4">
+              {Object.keys(goals).map((goalKey) => {
+                const goal = goals[goalKey as keyof typeof goals];
+                const capitalizedKey = goalKey.charAt(0).toUpperCase() + goalKey.slice(1);
+                
+                return (
+                  <div key={goalKey} className="flex items-center space-x-3">
+                    <span className="w-16 text-sm font-medium text-slate-600">{capitalizedKey}</span>
+                    <div className="flex-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <DollarSign size={16} />
+                      </div>
+                      <input
+                        type="number"
+                        value={goal.target}
+                        onChange={(e) => handleGoalChange(goalKey, Number(e.target.value))}
+                        placeholder="Goal amount"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-8 pr-3 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
         <div className="space-y-6">
           {goalData.map((goal) => {
-            const progress = Math.min((goal.current / goal.target) * 100, 100);
+            const progress = goal.target > 0 ? Math.min((goal.current / goal.target) * 100, 100) : 0;
             return (
               <div key={goal.name}>
                 <div className="flex justify-between text-sm mb-2">

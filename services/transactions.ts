@@ -11,6 +11,78 @@ export interface TransactionsResponse {
   error: string | null;
 }
 
+export interface Goal {
+  trip: { current: number; target: number };
+  debt: { current: number; target: number };
+  retirement: { current: number; target: number };
+}
+
+export interface GoalsResponse {
+  goals: Goal | null;
+  error: string | null;
+}
+
+export const goalsService = {
+  async getGoals(userId: string): Promise<GoalsResponse> {
+    try {
+      const { data, error } = await supabase
+        .from('goals')
+        .select('trip_target, trip_current, debt_target, debt_current, retirement_target, retirement_current')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        // If no goals found, return default values
+        if (error.code === 'PGRST116') {
+          return {
+            goals: {
+              trip: { current: 0, target: 0 },
+              debt: { current: 0, target: 0 },
+              retirement: { current: 0, target: 0 },
+            },
+            error: null
+          };
+        }
+        return { goals: null, error: error.message };
+      }
+
+      const goals: Goal = {
+        trip: { current: parseFloat(data.trip_current) || 0, target: parseFloat(data.trip_target) || 0 },
+        debt: { current: parseFloat(data.debt_current) || 0, target: parseFloat(data.debt_target) || 0 },
+        retirement: { current: parseFloat(data.retirement_current) || 0, target: parseFloat(data.retirement_target) || 0 },
+      };
+
+      return { goals, error: null };
+    } catch (error: any) {
+      return { goals: null, error: error.message };
+    }
+  },
+
+  async updateGoals(goals: Goal, userId: string): Promise<{ error: string | null }> {
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .upsert({
+          user_id: userId,
+          trip_target: goals.trip.target,
+          trip_current: goals.trip.current,
+          debt_target: goals.debt.target,
+          debt_current: goals.debt.current,
+          retirement_target: goals.retirement.target,
+          retirement_current: goals.retirement.current
+        });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  }
+};
+
 export const transactionService = {
   async getTransactions(userId: string): Promise<TransactionsResponse> {
     try {

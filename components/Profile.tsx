@@ -2,11 +2,14 @@
 import React from 'react';
 import { Settings, Shield, Bell, HelpCircle, LogOut, ExternalLink, Mail, Award } from 'lucide-react';
 
+import { User } from '../types';
+
 interface ProfileProps {
+  user: User;
   onLogout: () => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
+export const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
   const menuItems = [
     { icon: Shield, label: 'Privacy & Security', color: 'bg-blue-50 text-blue-600' },
     { icon: Bell, label: 'Notifications', color: 'bg-amber-50 text-amber-600' },
@@ -19,17 +22,23 @@ export const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       <div className="flex flex-col items-center text-center space-y-4 pt-4">
         <div className="relative">
           <div className="w-24 h-24 rounded-3xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-3xl shadow-inner relative overflow-hidden">
-            <img src="https://picsum.photos/seed/user1/200" alt="Profile" className="object-cover w-full h-full" />
+            {user.avatar ? (
+              <img src={user.avatar} alt="Profile" className="object-cover w-full h-full" />
+            ) : (
+              <div className="w-full h-full bg-indigo-200 flex items-center justify-center text-indigo-800">
+                {user.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-xl shadow-lg border border-slate-50">
             <Award size={16} className="text-amber-500" />
           </div>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Alex Thompson</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{user.name || 'User'}</h2>
           <div className="flex items-center space-x-2 justify-center text-slate-500 text-sm mt-1">
             <Mail size={14} />
-            <span>alex.t@moneybag.io</span>
+            <span>{user.email || 'No email'}</span>
           </div>
         </div>
         <button className="bg-indigo-50 text-indigo-600 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">
