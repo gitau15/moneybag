@@ -1,0 +1,6 @@
+
+{
+  "name": "MoneyBag",
+  "description": "A modern, secure financial portfolio manager with daily transaction tracking, calendar views, and goal-based progress visualization.",
+  "requestFramePermissions": []
+}
