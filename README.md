@@ -84,6 +84,26 @@ A financial management application built with React and TypeScript, featuring Su
 
 This app is ready to deploy to Vercel. When deploying, add the same environment variables in the Vercel dashboard.
 
+## Backend Server
+
+A separate backend API is available in the `server/` directory for handling complex business logic and data processing. To run the backend server:
+
+1. Navigate to the server directory:
+   ```bash
+   cd server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file with your environment variables
+4. Start the server:
+   ```bash
+   npm run dev
+   ```
+
+See the server README for more details.
+
 ## Development
 
 The app follows an incremental development approach, with features built one route at a time to ensure each is functional before proceeding to the next.

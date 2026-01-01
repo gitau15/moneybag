@@ -103,3 +103,9 @@
 - Updated App component to use Supabase for data persistence
 - Created database schema for transactions
 - Updated README with Supabase setup instructions
+
+## Backend API Server
+- Created a separate backend server using Node.js and Express
+- Implemented RESTful API endpoints for transactions and goals
+- Integrated with Supabase database for data persistence
+- Added comprehensive documentation for the backend
