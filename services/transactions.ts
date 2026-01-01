@@ -1,5 +1,5 @@
 // import { supabase } from '../supabase/client';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Transaction } from '../types';
 
 export interface TransactionResponse {
@@ -46,9 +46,18 @@ export const goalsService = {
 
       return { goals, error: null };
     } catch (error: any) {
+      console.error('Error fetching goals:', error);
+      // Check if it's an Axios error to get more details
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return { 
+          goals: { customGoals: [] }, 
+          error: (axiosError.response?.data as any)?.error || axiosError.message || 'Failed to fetch goals' 
+        };
+      }
       return { 
         goals: { customGoals: [] }, 
-        error: error.message 
+        error: error.message || 'Failed to fetch goals' 
       };
     }
   },
@@ -63,7 +72,12 @@ export const goalsService = {
 
       return { error: null };
     } catch (error: any) {
-      return { error: error.message };
+      console.error('Error updating goals:', error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return { error: (axiosError.response?.data as any)?.error || axiosError.message || 'Failed to update goals' };
+      }
+      return { error: error.message || 'Failed to update goals' };
     }
   }
 };
@@ -87,7 +101,18 @@ export const transactionService = {
         error: null 
       };
     } catch (error: any) {
-      return { transactions: [], error: error.message };
+      console.error('Error fetching transactions:', error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return { 
+          transactions: [], 
+          error: (axiosError.response?.data as any)?.error || axiosError.message || 'Failed to fetch transactions' 
+        };
+      }
+      return { 
+        transactions: [], 
+        error: error.message || 'Failed to fetch transactions' 
+      };
     }
   },
 
@@ -110,7 +135,18 @@ export const transactionService = {
 
       return { transaction: newTransaction, error: null };
     } catch (error: any) {
-      return { transaction: null, error: error.message };
+      console.error('Error adding transaction:', error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return { 
+          transaction: null, 
+          error: (axiosError.response?.data as any)?.error || axiosError.message || 'Failed to add transaction' 
+        };
+      }
+      return { 
+        transaction: null, 
+        error: error.message || 'Failed to add transaction' 
+      };
     }
   },
 
@@ -136,7 +172,18 @@ export const transactionService = {
 
       return { transaction: updatedTransaction, error: null };
     } catch (error: any) {
-      return { transaction: null, error: error.message };
+      console.error('Error updating transaction:', error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return { 
+          transaction: null, 
+          error: (axiosError.response?.data as any)?.error || axiosError.message || 'Failed to update transaction' 
+        };
+      }
+      return { 
+        transaction: null, 
+        error: error.message || 'Failed to update transaction' 
+      };
     }
   },
 
@@ -147,7 +194,12 @@ export const transactionService = {
 
       return { error: null };
     } catch (error: any) {
-      return { error: error.message };
+      console.error('Error deleting transaction:', error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return { error: (axiosError.response?.data as any)?.error || axiosError.message || 'Failed to delete transaction' };
+      }
+      return { error: error.message || 'Failed to delete transaction' };
     }
   }
 };

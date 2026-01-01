@@ -90,6 +90,11 @@
 - The calendar view provides a date-based perspective on transactions
 - The app is structured with reusable components and clean separation of concerns
 
+## Recent Changes
+- Fixed duplicate TransactionForm component in App.tsx (lines 115-127)
+- Improved error handling in transactions service with better error messages and Axios error type checking
+- Added console logging for debugging purposes in service error handlers
+
 ## GitHub Repository
 - Repository URL: https://github.com/gitau15/moneybag.git
 - The project is ready to be pushed to the remote repository

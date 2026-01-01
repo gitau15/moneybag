@@ -118,13 +118,6 @@ const App: React.FC = () => {
           onClose={() => setIsFormOpen(false)} 
         />
       )}
-
-      {isFormOpen && (
-        <TransactionForm 
-          onSave={handleAddTransaction} 
-          onClose={() => setIsFormOpen(false)} 
-        />
-      )}
     </>
   );
 };
