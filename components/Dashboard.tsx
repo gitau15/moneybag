@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Transaction, TransactionType } from '../types';
 import { formatCurrency } from '../utils';
 import { GOAL_LIMITS } from '../constants';
-import { goalsService } from '../services/transactions';
+import { goalsService, Goal } from '../services/transactions';
 import { 
   BarChart, 
   Bar, 
@@ -18,41 +18,52 @@ import { TrendingUp, TrendingDown, Target, Wallet, DollarSign } from 'lucide-rea
 
 interface DashboardProps {
   transactions: Transaction[];
-}
-
-interface DashboardProps {
-  transactions: Transaction[];
-  userId?: string; // Add userId for Supabase operations
+  userId?: string; // Add userId for backend operations
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ transactions, userId }) => {
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
   
-  const handleGoalChange = async (goalType: string, value: number) => {
+  const handleGoalChange = async (goalId: string, value: number) => {
     setGoals(prev => ({
       ...prev,
-      [goalType]: {
-        ...prev[goalType as keyof typeof prev],
-        target: value
-      }
+      customGoals: prev.customGoals.map(goal => 
+        goal.id === goalId ? { ...goal, target: value } : goal
+      )
     }));
     
-    // If user is logged in, save goals to Supabase
+    // If user is logged in, save goals to backend
     if (userId) {
       try {
-        const updatedGoals = {
-          ...goals,
-          [goalType]: {
-            ...goals[goalType as keyof typeof goals],
-            target: value
-          }
-        };
-        
-        await goalsService.updateGoals(updatedGoals, userId);
+        await goalsService.updateGoals(goals, userId);
       } catch (error) {
         console.error('Error saving goals:', error);
       }
     }
+  };
+  
+  const handleAddGoal = () => {
+    const newGoal = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: `Goal ${goals.customGoals.length + 1}`,
+      current: 0,
+      target: 0,
+      color: `#${Math.floor(Math.random()*16777215).toString(16)}` // random color
+    };
+    
+    setGoals(prev => ({
+      ...prev,
+      customGoals: [...prev.customGoals, newGoal]
+    }));
+  };
+  
+  const handleGoalNameChange = (goalId: string, newName: string) => {
+    setGoals(prev => ({
+      ...prev,
+      customGoals: prev.customGoals.map(goal => 
+        goal.id === goalId ? { ...goal, name: newName } : goal
+      )
+    }));
   };
   const totals = useMemo(() => {
     return transactions.reduce(
@@ -67,30 +78,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, userId }) =>
 
   const balance = totals.income - totals.expense;
 
-  const [goals, setGoals] = useState({
-    trip: { current: 0, target: 0 },
-    debt: { current: 0, target: 0 },
-    retirement: { current: 0, target: 0 },
-  });
+  const [goals, setGoals] = useState<Goal>({ customGoals: [] });
 
   useEffect(() => {
-    // Calculate current amounts from transactions
-    const tripCurrent = transactions.filter(t => t.category === 'International Trip').reduce((s, t) => s + t.amount, 0);
-    const debtCurrent = transactions.filter(t => t.category === 'Debt Payment').reduce((s, t) => s + t.amount, 0);
-    const retirementCurrent = transactions.filter(t => t.category === 'Retirement').reduce((s, t) => s + t.amount, 0);
-    
-    setGoals(prev => ({
-      trip: { ...prev.trip, current: tripCurrent },
-      debt: { ...prev.debt, current: debtCurrent },
-      retirement: { ...prev.retirement, current: retirementCurrent },
-    }));
+    // Calculate current amounts from transactions and update goals
+    setGoals(prev => {
+      const updatedGoals = { ...prev };
+      
+      // Update current values based on transactions
+      updatedGoals.customGoals = updatedGoals.customGoals.map(goal => {
+        // Calculate current value based on transactions for this goal category
+        const categoryTotal = transactions
+          .filter(t => t.category.toLowerCase().includes(goal.name.toLowerCase()))
+          .reduce((sum, t) => sum + t.amount, 0);
+          
+        return { ...goal, current: categoryTotal };
+      });
+      
+      return updatedGoals;
+    });
   }, [transactions]);
 
-  const goalData = [
-    { name: 'Trip', current: goals.trip.current, target: goals.trip.target, color: '#6366f1' },
-    { name: 'Debt', current: goals.debt.current, target: goals.debt.target, color: '#f43f5e' },
-    { name: 'Retirement', current: goals.retirement.current, target: goals.retirement.target, color: '#10b981' },
-  ];
+  const goalData = goals.customGoals;
 
   const chartData = useMemo(() => {
     const grouped = transactions.reduce((acc: any, t) => {
@@ -162,30 +171,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, userId }) =>
         
         {isGoalFormOpen && (
           <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <h4 className="font-semibold text-slate-700 mb-3">Set Your Goals</h4>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-semibold text-slate-700">Set Your Goals</h4>
+              <button 
+                type="button" 
+                onClick={handleAddGoal}
+                className="text-xs font-bold text-indigo-600 hover:underline"
+              >
+                + Add Goal
+              </button>
+            </div>
             <div className="space-y-4">
-              {Object.keys(goals).map((goalKey) => {
-                const goal = goals[goalKey as keyof typeof goals];
-                const capitalizedKey = goalKey.charAt(0).toUpperCase() + goalKey.slice(1);
-                
-                return (
-                  <div key={goalKey} className="flex items-center space-x-3">
-                    <span className="w-16 text-sm font-medium text-slate-600">{capitalizedKey}</span>
-                    <div className="flex-1 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <DollarSign size={16} />
-                      </div>
-                      <input
-                        type="number"
-                        value={goal.target}
-                        onChange={(e) => handleGoalChange(goalKey, Number(e.target.value))}
-                        placeholder="Goal amount"
-                        className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-8 pr-3 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
+              {goals.customGoals.map((goal) => (
+                <div key={goal.id} className="flex items-center space-x-3">
+                  <div className="w-32">
+                    <input
+                      type="text"
+                      value={goal.name}
+                      onChange={(e) => handleGoalNameChange(goal.id, e.target.value)}
+                      placeholder="Goal name"
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
                   </div>
-                );
-              })}
+                  <div className="flex-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <DollarSign size={16} />
+                    </div>
+                    <input
+                      type="number"
+                      value={goal.target}
+                      onChange={(e) => handleGoalChange(goal.id, Number(e.target.value))}
+                      placeholder="Goal amount"
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-8 pr-3 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              ))}
+              {goals.customGoals.length === 0 && (
+                <p className="text-sm text-slate-500 italic">No goals yet. Click "Add Goal" to create your first financial goal.</p>
+              )}
             </div>
           </div>
         )}

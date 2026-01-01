@@ -65,7 +65,7 @@ const App: React.FC = () => {
       if (goalsError) {
         console.error('Error loading goals:', goalsError);
       } else if (goals) {
-        // setGoals(goals); // We'll pass this to Dashboard as needed
+        // Goals are now loaded and will be passed to Dashboard
       }
     }
   };

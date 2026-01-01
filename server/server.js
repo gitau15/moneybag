@@ -130,32 +130,34 @@ app.get('/api/goals/:userId', async (req, res) => {
     const { userId } = req.params;
     
     const { data, error } = await supabase
-      .from('goals')
-      .select('trip_target, trip_current, debt_target, debt_current, retirement_target, retirement_current')
-      .eq('user_id', userId)
-      .single();
+      .from('custom_goals')
+      .select('*')
+      .eq('user_id', userId);
 
     if (error) {
-      // If no goals found, return default values
+      // If no goals found, return empty array
       if (error.code === 'PGRST116') {
         return res.json({ 
-          goals: {
-            trip: { current: 0, target: 0 },
-            debt: { current: 0, target: 0 },
-            retirement: { current: 0, target: 0 }
-          }
+          goals: { customGoals: [] }
         });
       }
       return res.status(400).json({ error: error.message });
     }
 
-    const goals = {
-      trip: { current: parseFloat(data.trip_current) || 0, target: parseFloat(data.trip_target) || 0 },
-      debt: { current: parseFloat(data.debt_current) || 0, target: parseFloat(data.debt_target) || 0 },
-      retirement: { current: parseFloat(data.retirement_current) || 0, target: parseFloat(data.retirement_target) || 0 }
-    };
+    // Transform the data to match the frontend structure
+    const customGoals = data.map(goal => ({
+      id: goal.id,
+      name: goal.name,
+      current: parseFloat(goal.current) || 0,
+      target: parseFloat(goal.target) || 0,
+      color: goal.color || '#6366f1' // default color
+    }));
 
-    res.json({ goals });
+    res.json({ 
+      goals: { 
+        customGoals
+      } 
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -164,27 +166,34 @@ app.get('/api/goals/:userId', async (req, res) => {
 // Update user goals
 app.post('/api/goals', async (req, res) => {
   try {
-    const { user_id, trip_target, debt_target, retirement_target } = req.body;
+    const { user_id, customGoals } = req.body;
     
-    const { data, error } = await supabase
-      .from('goals')
-      .upsert({
+    // Delete existing goals for the user
+    await supabase
+      .from('custom_goals')
+      .delete()
+      .eq('user_id', user_id);
+    
+    // Insert new goals
+    if (customGoals && customGoals.length > 0) {
+      const goalsToInsert = customGoals.map(goal => ({
         user_id,
-        trip_target: trip_target || 0,
-        trip_current: 0, // Current values would typically be calculated based on transactions
-        debt_target: debt_target || 0,
-        debt_current: 0,
-        retirement_target: retirement_target || 0,
-        retirement_current: 0
-      }, { onConflict: 'user_id' })
-      .select()
-      .single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
+        name: goal.name,
+        current: goal.current,
+        target: goal.target,
+        color: goal.color
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('custom_goals')
+        .insert(goalsToInsert);
+      
+      if (insertError) {
+        return res.status(400).json({ error: insertError.message });
+      }
     }
 
-    res.json({ goals: data });
+    res.json({ message: 'Goals updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

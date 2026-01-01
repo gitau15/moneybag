@@ -12,10 +12,16 @@ export interface TransactionsResponse {
   error: string | null;
 }
 
+export interface CustomGoal {
+  id: string;
+  name: string;
+  current: number;
+  target: number;
+  color: string;
+}
+
 export interface Goal {
-  trip: { current: number; target: number };
-  debt: { current: number; target: number };
-  retirement: { current: number; target: number };
+  customGoals: CustomGoal[];
 }
 
 export interface GoalsResponse {
@@ -30,14 +36,18 @@ export const goalsService = {
       const response = await axios.get(`${BACKEND_URL}/api/goals/${userId}`);
       const { goals } = response.data;
 
+      // If no goals exist, return empty array
+      if (!goals) {
+        return { 
+          goals: { customGoals: [] }, 
+          error: null 
+        };
+      }
+
       return { goals, error: null };
     } catch (error: any) {
       return { 
-        goals: {
-          trip: { current: 0, target: 0 },
-          debt: { current: 0, target: 0 },
-          retirement: { current: 0, target: 0 },
-        }, 
+        goals: { customGoals: [] }, 
         error: error.message 
       };
     }
@@ -48,9 +58,7 @@ export const goalsService = {
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
       await axios.post(`${BACKEND_URL}/api/goals`, {
         user_id: userId,
-        trip_target: goals.trip.target,
-        debt_target: goals.debt.target,
-        retirement_target: goals.retirement.target
+        customGoals: goals.customGoals
       });
 
       return { error: null };

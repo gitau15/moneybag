@@ -59,17 +59,15 @@ A financial management application built with React and TypeScript, featuring Su
      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
    );
 
-   Goals table:
+   Custom Goals table:
    ```sql
-   CREATE TABLE goals (
+   CREATE TABLE custom_goals (
      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
      user_id UUID REFERENCES auth.users NOT NULL,
-     trip_target DECIMAL(10, 2) DEFAULT 0,
-     trip_current DECIMAL(10, 2) DEFAULT 0,
-     debt_target DECIMAL(10, 2) DEFAULT 0,
-     debt_current DECIMAL(10, 2) DEFAULT 0,
-     retirement_target DECIMAL(10, 2) DEFAULT 0,
-     retirement_current DECIMAL(10, 2) DEFAULT 0,
+     name TEXT NOT NULL,
+     current DECIMAL(10, 2) DEFAULT 0,
+     target DECIMAL(10, 2) DEFAULT 0,
+     color TEXT DEFAULT '#6366f1',
      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
    );
